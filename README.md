@@ -1,56 +1,42 @@
-# Welcome to your Expo app 👋
+#  Ateliê Encantado — Aplicativo Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> **Mostruário e Gestão de Encomendas Artesanais**
 
-## Get started
+O **Ateliê Encantado** é uma aplicação mobile projetada para conectar clientes a um catálogo exclusivo de produtos artesanais, facilitando a escolha e a encomenda de itens personalizados (unitários ou em lote via carrinho), além de fornecer ao administrador um painel completo para gerenciamento de catálogo e acompanhamento de pedidos.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+##  Sobre o Projeto
 
-2. Start the app
+O objetivo principal do aplicativo é servir como um **mostruário interativo** e simplificar o fluxo de encomendas. O sistema permite a navegação pública pelo catálogo, exigindo autenticação apenas no momento de gerenciar o carrinho, realizar encomendas ou acessar as funcionalidades administrativas.
 
-   ```bash
-   npx expo start
-   ```
+###  Recursos Nativos Integrados
 
-In the output, you'll find options to open the app in a
+O projeto utiliza controles e APIs nativas do dispositivo para aprimorar a experiência do usuário:
+*  **Notificações Push:** Avisos em tempo real sobre atualizações no status dos pedidos.
+*  **Feedback Háptico (Vibração):** Resposta tátil ao adicionar itens ao carrinho ou confirmar ações.
+*  **Status da Bateria:** Monitoramento de energia para otimização de rotinas em segundo plano.
+*  **Gerenciamento de Permissões:** Solicitado de forma transparente conforme o uso de recursos do SO.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+##  Ciclos de Uso e Perfis de Usuário
 
-## Get a fresh project
+###  Ciclo do Cliente
+1. **Navegação Livre:** Acesso à tela *Home* para visualizar o catálogo e os preços sem necessidade de login.
+2. **Autenticação Direcionada:** Tentativas de acessar o perfil, adicionar itens ao carrinho ou realizar encomendas redirecionam o usuário para a tela de *Login / Cadastro*.
+3. **Fluxo Pós-Login:** Retorno à *Home* com permissões para:
+   * Visualizar detalhes e especificações do produto.
+   * Adicionar múltiplos itens ao carrinho de encomendas.
+   * Gerenciar dados do perfil e acompanhar o histórico de pedidos.
 
-When you're ready, run:
+###  Ciclo do Administrador
+1. **Acesso Administrativo:** Autenticação via credenciais master/admin na tela de login.
+2. **Painel de Gestão:** Acesso ao *Dashboard* com controle total do sistema:
+   * **CRUD de Produtos:** Liberdade para cadastrar, editar, ocultar ou alterar preços de itens no catálogo.
+   * **Monitoramento de Encomendas:** Interface dedicada para visualizar e atualizar o status dos pedidos dos clientes (*Pendente*, *Em Produção*, *Pronto*).
 
-```bash
-npm run reset-project
-```
+---
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🛠️ Diagrama de Casos de Uso (UML)
 
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.

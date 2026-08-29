@@ -1,0 +1,79 @@
+@startuml Atelie_Encantado_Casos_de_Uso
+
+' Configurações visuais e de layout
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle stickman
+skinparam usecase {
+    BackgroundColor #FDFEFE
+    BorderColor #2C3E50
+    ArrowColor #34495E
+}
+
+title Diagrama de Casos de Uso - Ateliê Encantado
+
+' Atores
+actor "Cliente Não Logado" as ClienteNL
+actor "Cliente Autenticado" as ClienteA
+actor "Administrador" as Admin
+actor "Sistema Mobile (SO)" as Sistema << System >>
+
+' Herança de Atores (Cliente Autenticado herda ações de navegação do Cliente Não Logado)
+ClienteNL <|-- ClienteA
+
+rectangle "Ateliê Encantado (App Mobile)" {
+    
+    ' Casos de Uso - Navegação e Autenticação
+    usecase "UC01: Visualizar Catálogo de Produtos" as UC01
+    usecase "UC02: Visualizar Detalhes do Produto" as UC02
+    usecase "UC03: Autenticar-se / Criar Conta" as UC03
+    
+    ' Casos de Uso - Fluxo de Compras (Cliente)
+    usecase "UC04: Gerenciar Carrinho de Compras" as UC04
+    usecase "UC05: Finalizar Pedido / Encomenda" as UC05
+    usecase "UC06: Gerenciar Perfil" as UC06
+    
+    ' Casos de Uso - Administração
+    usecase "UC07: Gerenciar Produtos (CRUD)" as UC07
+    usecase "UC08: Monitorar Pedidos e Métricas" as UC08
+    usecase "UC09: Atualizar Status do Pedido" as UC09
+    
+    ' Casos de Uso - Recursos Nativos
+    usecase "UC10: Receber Notificações Push" as UC10
+    usecase "UC11: Disparar Feedback Háptico (Vibração)" as UC11
+    usecase "UC12: Checar Bateria e Permissões" as UC12
+
+}
+
+' Relacionamentos - Cliente Não Logado
+ClienteNL --> UC01
+ClienteNL --> UC02
+ClienteNL --> UC03
+
+' Relacionamentos - Cliente Autenticado
+ClienteA --> UC04
+ClienteA --> UC05
+ClienteA --> UC06
+
+' Relacionamentos - Administrador
+Admin --> UC07
+Admin --> UC08
+Admin --> UC09
+
+' Relacionamentos do Sistema Nativo
+Sistema --> UC12
+
+' Inclusões e Extensões (Relacionamentos Internos)
+UC02 .> UC01 : <<extend>>
+UC04 .> UC03 : <<include>>
+UC05 .> UC03 : <<include>>
+UC06 .> UC03 : <<include>>
+UC09 .> UC08 : <<include>>
+
+' Integração com Recursos Nativos
+UC04 ..> UC11 : <<include>>
+UC05 ..> UC11 : <<include>>
+UC09 ..> UC10 : <<trigger>>
+UC05 ..> UC12 : <<include>>
+
+@enduml
