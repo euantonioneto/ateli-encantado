@@ -130,6 +130,8 @@ npm start
 
 ## Diagrama de Casos de Uso (UML)
 
+![Diagrama de casos de uso do Ateliê Encantado](./assets/images/diagrama.svg)
+
 ```plantuml
 @startuml Diagrama de Casos de Uso - AE Atelier de Borboletas
 
