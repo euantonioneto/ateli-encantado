@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useStore } from '../context/StoreContext';
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -14,7 +14,14 @@ const categories = [
 type Category = { name: string; image: ImageSourcePropType };
 
 export default function HomeScreen() {
-  const [favorite, setFavorite] = useState(false);
+  const { favorites, toggleFavorite, cart, toggleCart, customerProfile } = useStore();
+
+  const productId = 'buque-borboleta';
+  const favorite = favorites.includes(productId);
+  const inCart = cart.includes(productId);
+  const makeupProductId = 'buque-maquiagem';
+  const makeupFavorite = favorites.includes(makeupProductId);
+  const makeupInCart = cart.includes(makeupProductId);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -22,6 +29,8 @@ export default function HomeScreen() {
         <View style={styles.logoContainer}>
           <Image source={require('@/assets/images/logo/logo.png')} style={styles.logo} resizeMode="contain" />
         </View>
+
+        {customerProfile && <Text style={styles.welcome}>Olá, {customerProfile.nome.split(' ')[0]}!</Text>}
 
         <Text style={styles.sectionTitle}>catalogo</Text>
         <View style={styles.categoryGrid}>
@@ -43,11 +52,42 @@ export default function HomeScreen() {
           <Text style={styles.price}>$: 180,00</Text>
           <Text style={styles.productDetails}>70 borboletas{`\n`}polaroides: quantas quiser{`\n`}cor a sua escolha</Text>
           <TouchableOpacity
-            onPress={() => setFavorite((current) => !current)}
+            onPress={() => toggleFavorite(productId)}
             style={styles.favorite}
             accessibilityRole="button"
             accessibilityLabel={favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}>
             <Text style={styles.heart}>{favorite ? '♥' : '♡'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => toggleCart(productId)}
+            style={[styles.cart, inCart && styles.cartActive]}
+            accessibilityRole="button"
+            accessibilityLabel={inCart ? 'Remover do carrinho' : 'Adicionar ao carrinho'}>
+            <Image source={require('@/assets/images/carrinho.png')} style={styles.cartIcon} resizeMode="contain" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.productCardExtra}>
+          <Image source={require('@/assets/images/produtos/buque de maquiagem.png')} style={styles.productImage} resizeMode="contain" />
+          <Text style={styles.productName}>buquê de maquiagem</Text>
+          <View style={styles.delivery}>
+            <Text style={styles.deliveryText}>Tipo:{`\n`}Completo</Text>
+          </View>
+          <Text style={styles.price}>$: 180,00</Text>
+          <Text style={styles.productDetails}>maquiagem{`\n`}polaroides: quantas quiser{`\n`}cor a sua escolha</Text>
+          <TouchableOpacity
+            onPress={() => toggleFavorite(makeupProductId)}
+            style={styles.favorite}
+            accessibilityRole="button"
+            accessibilityLabel={makeupFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}>
+            <Text style={styles.heart}>{makeupFavorite ? '♥' : '♡'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => toggleCart(makeupProductId)}
+            style={[styles.cart, makeupInCart && styles.cartActive]}
+            accessibilityRole="button"
+            accessibilityLabel={makeupInCart ? 'Remover do carrinho' : 'Adicionar ao carrinho'}>
+            <Image source={require('@/assets/images/carrinho.png')} style={styles.cartIcon} resizeMode="contain" />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -61,6 +101,7 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 20, paddingHorizontal: 22, paddingTop: 2 },
   logoContainer: { alignItems: 'center', height: 112, justifyContent: 'center', marginBottom: 2 },
   logo: { height: 98, width: 150 },
+  welcome: { color: '#090909', fontSize: 18, marginBottom: 8 },
   sectionTitle: { color: '#090909', fontSize: 18, fontWeight: '400', marginBottom: 6 },
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 18 },
   category: { alignItems: 'center', aspectRatio: 1, backgroundColor: '#DDDDDD', justifyContent: 'space-between', paddingBottom: 4, paddingTop: 4, width: '29.5%' },
@@ -68,12 +109,16 @@ const styles = StyleSheet.create({
   categoryName: { color: '#090909', fontSize: 10, lineHeight: 12, textAlign: 'center' },
   popularTitle: { color: '#090909', fontSize: 24, fontWeight: '400', marginBottom: 66, marginTop: 14 },
   productCard: { backgroundColor: '#DDDDDD', borderRadius: 30, height: 132, overflow: 'visible', position: 'relative' },
+  productCardExtra: { backgroundColor: '#DDDDDD', borderRadius: 30, height: 132, marginTop: 74, overflow: 'visible', position: 'relative' },
   productImage: { height: 150, left: '50%', marginLeft: -75, position: 'absolute', top: -67, width: 150, zIndex: 1 },
   productName: { color: '#090909', fontSize: 11, left: 14, position: 'absolute', top: 27 },
   delivery: { position: 'absolute', right: 18, top: 24 },
   deliveryText: { color: '#090909', fontSize: 11, lineHeight: 13, textAlign: 'center' },
   price: { bottom: 16, color: '#090909', fontSize: 16, left: 14, position: 'absolute' },
   productDetails: { bottom: 8, color: '#090909', fontSize: 10, lineHeight: 11, position: 'absolute', textAlign: 'center', width: '100%' },
-  favorite: { bottom: 12, padding: 1, position: 'absolute', right: 18 },
+  favorite: { bottom: 12, padding: 1, position: 'absolute', right: 50 },
   heart: { color: '#090909', fontSize: 38, fontWeight: '200', lineHeight: 40 },
+  cart: { alignItems: 'center', bottom: 14, height: 30, justifyContent: 'center', position: 'absolute', right: 12, width: 30 },
+  cartActive: { backgroundColor: '#C9CDD9', borderRadius: 15 },
+  cartIcon: { height: 23, tintColor: '#090909', width: 23 },
 });
