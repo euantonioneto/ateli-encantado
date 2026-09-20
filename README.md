@@ -1,41 +1,226 @@
-#  Ateliê Encantado — Aplicativo Mobile
+# Ateliê Encantado
 
-> **Mostruário e Gestão de Encomendas Artesanais**
+Aplicativo mobile desenvolvido com React Native, Expo e Expo Router para apresentar produtos artesanais, organizar favoritos e carrinho, além de oferecer um fluxo de cadastro para clientes e acesso administrativo.
 
-O **Ateliê Encantado** é uma aplicação mobile projetada para conectar clientes a um catálogo exclusivo de produtos artesanais, facilitando a escolha e a encomenda de itens personalizados (unitários ou em lote via carrinho), além de fornecer ao administrador um painel completo para gerenciamento de catálogo e acompanhamento de pedidos.
+## Objetivo
 
----
+O Ateliê Encantado permite que clientes conheçam o catálogo, criem um perfil, favoritem produtos e preparem um carrinho de encomendas. O projeto também prevê uma área administrativa para acompanhar pedidos e gerenciar produtos.
 
-##  Sobre o Projeto
+## Tecnologias
 
-O objetivo principal do aplicativo é servir como um **mostruário interativo** e simplificar o fluxo de encomendas. O sistema permite a navegação pública pelo catálogo, exigindo autenticação apenas no momento de gerenciar o carrinho, realizar encomendas ou acessar as funcionalidades administrativas.
+- React Native
+- Expo SDK 57
+- Expo Router
+- TypeScript
+- React Context API
 
-###  Recursos Nativos Integrados
+## Fluxo principal
 
-O projeto utiliza controles e APIs nativas do dispositivo para aprimorar a experiência do usuário:
-*  **Notificações Push:** Avisos em tempo real sobre atualizações no status dos pedidos.
-*  **Feedback Háptico (Vibração):** Resposta tátil ao adicionar itens ao carrinho ou confirmar ações.
-*  **Status da Bateria:** Monitoramento de energia para otimização de rotinas em segundo plano.
-*  **Gerenciamento de Permissões:** Solicitado de forma transparente conforme o uso de recursos do SO.
+```text
+Cliente sem conta
+  └─ Perfil
+      ├─ Cadastrar
+      │   ├─ Dados pessoais
+      │   ├─ Endereço
+      │   └─ Conferência → Home
+      └─ Logar → Home
 
----
+Home
+  ├─ Favoritos
+  ├─ Carrinho
+  └─ Perfil
+      ├─ Dados da conta
+      ├─ Endereço de entrega
+      ├─ Meus pedidos
+      └─ Conversar com o vendedor
 
-##  Ciclos de Uso e Perfis de Usuário
+Administrador
+  └─ Login administrativo → Dashboard
+```
 
-###  Ciclo do Cliente
-1. **Navegação Livre:** Acesso à tela *Home* para visualizar o catálogo e os preços sem necessidade de login.
-2. **Autenticação Direcionada:** Tentativas de acessar o perfil, adicionar itens ao carrinho ou realizar encomendas redirecionam o usuário para a tela de *Login / Cadastro*.
-3. **Fluxo Pós-Login:** Retorno à *Home* com permissões para:
-   * Visualizar detalhes e especificações do produto.
-   * Adicionar múltiplos itens ao carrinho de encomendas.
-   * Gerenciar dados do perfil e acompanhar o histórico de pedidos.
+## Funcionalidades já implementadas
 
-###  Ciclo do Administrador
-1. **Acesso Administrativo:** Autenticação via credenciais master/admin na tela de login.
-2. **Painel de Gestão:** Acesso ao *Dashboard* com controle total do sistema:
-   * **CRUD de Produtos:** Liberdade para cadastrar, editar, ocultar ou alterar preços de itens no catálogo.
-   * **Monitoramento de Encomendas:** Interface dedicada para visualizar e atualizar o status dos pedidos dos clientes (*Pendente*, *Em Produção*, *Pronto*).
+### Cliente
 
----
+- Cadastro dividido em três etapas: dados pessoais, endereço e confirmação.
+- Validação de campos obrigatórios e confirmação de senha.
+- Criação de perfil em memória após concluir o cadastro.
+- Redirecionamento para a Home após cadastrar.
+- Exibição do primeiro nome da cliente na Home.
+- Navegação por abas: Home, Favoritos, Carrinho e Perfil.
+- Inclusão e remoção de produtos dos favoritos e do carrinho.
+- Exibição dos dados básicos do perfil criado.
+- Navegação para Dados da conta, Endereço de entrega, Meus pedidos e Conversar com o vendedor.
+- Mensagem “Ainda em desenvolvimento” nas telas que ainda não receberam conteúdo.
 
-## 🛠️ Diagrama de Casos de Uso (UML)
+### Administração
+
+- Tela de login administrativo.
+- Validação de demonstração com as credenciais abaixo:
+
+```text
+E-mail: adm@gmail.com
+Senha: Adm
+```
+
+- Redirecionamento para o Dashboard administrativo.
+
+## Funcionalidades previstas
+
+Estas funcionalidades fazem parte do diagrama de casos de uso, mas ainda precisam ser implementadas:
+
+- Detalhes de produto e filtro por categoria.
+- Finalização de compra e escolha de pagamento.
+- Histórico e acompanhamento de pedidos.
+- Edição dos dados da conta e endereço de entrega.
+- Conversa com o vendedor ou integração com WhatsApp.
+- Logout.
+- Gerenciamento de pedidos e produtos no Dashboard.
+- Persistência de dados em banco de dados ou armazenamento local.
+- Login e autenticação reais.
+
+## Estrutura de telas
+
+```text
+src/app/
+├── context/
+│   └── StoreContext.tsx
+├── loguin/
+│   ├── cadastro.tsx
+│   ├── logar-adm.tsx
+│   └── logar-cliente.tsx
+├── telas-adm/
+│   └── Dashboard.tsx
+└── telas-cliente/
+    ├── index.tsx
+    ├── favoritos.tsx
+    ├── carrinho.tsx
+    ├── perfil.tsx
+    ├── dados-conta.tsx
+    ├── endereco-entrega.tsx
+    ├── meus-pedidos.tsx
+    └── conversar-vendedor.tsx
+```
+
+## Estado compartilhado
+
+O arquivo `src/app/context/StoreContext.tsx` centraliza os dados usados entre as telas:
+
+- perfil da cliente;
+- produtos favoritados;
+- produtos adicionados ao carrinho.
+
+No momento, esses dados existem apenas enquanto o aplicativo está aberto.
+
+## Como executar
+
+1. Instale as dependências:
+
+```bash
+npm install
+```
+
+2. Inicie o projeto:
+
+```bash
+npm start
+```
+
+3. Use o Expo Go, um emulador ou a versão web para abrir o aplicativo.
+
+## Diagrama de Casos de Uso (UML)
+
+```plantuml
+@startuml Diagrama de Casos de Uso - AE Atelier de Borboletas
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Cliente" as C
+actor "Administrador" as A
+
+rectangle "AE - Atelier de Borboletas" {
+  package "Autenticação" {
+    usecase "Fazer Login" as UC1
+    usecase "Cadastrar-se" as UC2
+    usecase "Informar Dados Pessoais" as UC2a
+    usecase "Informar Endereço" as UC2b
+    usecase "Confirmar Cadastro" as UC2c
+    usecase "Fazer Logout" as UC3
+  }
+
+  package "Catálogo" {
+    usecase "Navegar pelo Catálogo" as UC4
+    usecase "Filtrar por Categoria" as UC5
+    usecase "Visualizar Detalhes\ndo Produto" as UC6
+    usecase "Adicionar aos Favoritos" as UC7
+  }
+
+  package "Compras" {
+    usecase "Adicionar ao Carrinho" as UC8
+    usecase "Visualizar Carrinho" as UC9
+    usecase "Finalizar Compra" as UC10
+    usecase "Escolher Forma\nde Pagamento" as UC11
+    usecase "Acompanhar Pedidos" as UC12
+  }
+
+  package "Perfil" {
+    usecase "Visualizar Perfil" as UC13
+    usecase "Editar Dados da Conta" as UC14
+    usecase "Editar Endereço\nde Entrega" as UC15
+  }
+
+  package "Comunicação" {
+    usecase "Solicitar Presente\nPersonalizado" as UC16
+    usecase "Conversar com\no Vendedor" as UC17
+    usecase "Visualizar Mensagens\nde Clientes" as UC18
+    usecase "Responder Cliente" as UC19
+  }
+
+  package "Administração" {
+    usecase "Acessar Dashboard" as UC20
+    usecase "Gerenciar Pedidos" as UC21
+    usecase "Atualizar Status\ndo Pedido" as UC22
+    usecase "Criar Produto" as UC23
+    usecase "Cadastrar Foto\ndo Produto" as UC23a
+    usecase "Definir Tipos\nDisponíveis" as UC23b
+  }
+}
+
+C --> UC1
+C --> UC2
+C --> UC3
+C --> UC4
+C --> UC5
+C --> UC6
+C --> UC7
+C --> UC8
+C --> UC9
+C --> UC10
+C --> UC12
+C --> UC13
+C --> UC14
+C --> UC15
+C --> UC16
+
+A --> UC1
+A --> UC20
+A --> UC21
+A --> UC23
+A --> UC18
+A --> UC19
+
+UC2 ..> UC2a : <<include>>
+UC2 ..> UC2b : <<include>>
+UC2 ..> UC2c : <<include>>
+UC10 ..> UC11 : <<include>>
+UC23 ..> UC23a : <<include>>
+UC23 ..> UC23b : <<include>>
+
+UC5 ..> UC4 : <<extend>>
+UC7 ..> UC6 : <<extend>>
+UC8 ..> UC6 : <<extend>>
+UC16 ..> UC17 : <<include>>
+UC21 ..> UC22 : <<include>>
+@enduml
+```
