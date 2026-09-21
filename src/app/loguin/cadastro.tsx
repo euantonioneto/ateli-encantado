@@ -41,7 +41,7 @@ export default function CadastroScreen() {
     setCadastro((dadosAtuais) => ({ ...dadosAtuais, [campo]: valor }));
   };
 
-  const avancar = () => {
+  const avancar = () => {/*avali*/
     if (etapa === 1) {
       if (!cadastro.nome || !cadastro.email || !cadastro.senha || !cadastro.confirmarSenha) {
         Alert.alert('Preencha seus dados', 'Informe nome, e-mail e senha para continuar.');
@@ -61,7 +61,7 @@ export default function CadastroScreen() {
     setEtapa((etapaAtual) => etapaAtual + 1);
   };
 
-  const concluirCadastro = () => {
+  const concluirCadastro = () => {/*concluir*/
     createCustomerProfile({
       nome: cadastro.nome,
       email: cadastro.email,

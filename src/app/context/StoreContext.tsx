@@ -22,7 +22,7 @@ type StoreContextData = {
 
 const StoreContext = createContext<StoreContextData | undefined>(undefined);
 
-export function StoreProvider({ children }: { children: ReactNode }) {
+export function StoreProvider({ children }: { children: ReactNode }) { /*fa/ca/pe/ca */
   const [favorites, setFavorites] = useState<string[]>([]);
   const [cart, setCart] = useState<string[]>([]);
   const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);

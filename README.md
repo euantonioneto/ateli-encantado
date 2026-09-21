@@ -6,6 +6,10 @@ Aplicativo mobile desenvolvido com React Native, Expo e Expo Router para apresen
 
 O Ateliê Encantado permite que clientes conheçam o catálogo, criem um perfil, favoritem produtos e preparem um carrinho de encomendas. O projeto também prevê uma área administrativa para acompanhar pedidos e gerenciar produtos.
 
+## Protótipo no Figma
+
+O protótipo visual do aplicativo está disponível no [Figma](https://www.figma.com/design/h0Rj459fZuEKZgxicFDfzg/atelie-encantado?node-id=0-1&t=6UX2LuSximgr3LcL-1).
+
 ## Tecnologias
 
 - React Native
