@@ -422,14 +422,3 @@ npm start
 ```
 
 4. Abra no Expo Go, em um emulador ou no navegador.
-
-## Critérios de entrega
-
-- [x] Documentar a arquitetura proposta.
-- [x] Atualizar o diagrama de casos de uso com ao menos quatro casos novos.
-- [x] Criar o diagrama de classes do domínio do back-end.
-- [x] Definir as tabelas necessárias e o contrato dos endpoints.
-- [ ] Criar API REST e implementar os casos de uso priorizados.
-- [ ] Criar as migrations e persistir os dados no PostgreSQL.
-- [ ] Integrar o aplicativo Expo aos endpoints da API.
-- [ ] Integrar câmera no cadastro administrativo de produto.
