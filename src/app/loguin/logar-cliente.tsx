@@ -1,13 +1,30 @@
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useState } from 'react';
+import { useStore } from '../context/StoreContext';
 
 export default function LoginClienteScreen() {
+  const { login } = useStore();
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+
+  function entrarComoCliente() {
+    if (!email.trim() || !senha) {
+      Alert.alert('Preencha seus dados', 'Informe seu e-mail e sua senha para continuar.');
+      return;
+    }
+    login('cliente');
+    router.replace('/telas-cliente/home');
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>
+        <View style={styles.container}>
         <Image
-          source={require('@/assets/images/logo/logo.png')}
+          source={require('@/assets/images/logo/logo2.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -21,6 +38,8 @@ export default function LoginClienteScreen() {
             placeholder="Digite seu e-mail"
             keyboardType="email-address"
             autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
           />
 
           <Text style={styles.label}>Senha</Text>
@@ -28,12 +47,14 @@ export default function LoginClienteScreen() {
             style={styles.input}
             placeholder="Digite sua senha"
             secureTextEntry
+            value={senha}
+            onChangeText={setSenha}
           />
         </View>
 
         <TouchableOpacity 
         style={styles.button}
-        onPress={() => router.replace('/telas-cliente')}>
+        onPress={entrarComoCliente}>
           <Text style={styles.buttonText}>Entrar</Text>
         </TouchableOpacity>
 
@@ -54,7 +75,12 @@ export default function LoginClienteScreen() {
             onPress={() => router.push('/loguin/logar-adm')}>
           <Text style={styles.adminText}>Acessar como adm</Text>
         </TouchableOpacity>
-      </View>
+        <TouchableOpacity style={styles.adminButton} onPress={() => router.replace('/loguin')}>
+          <Text style={styles.adminText}>Escolher outro tipo de acesso</Text>
+        </TouchableOpacity>
+        </View>
+       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -64,11 +90,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  keyboard: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingVertical: 24 },
 
   container: {
-    flex: 1,
     paddingHorizontal: 26,
-    justifyContent: 'center',
+    flexGrow: 1,
   },
 
   logo: {

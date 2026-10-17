@@ -35,7 +35,7 @@ const initialCadastro: Cadastro = {
 export default function CadastroScreen() {
   const [etapa, setEtapa] = useState(1);
   const [cadastro, setCadastro] = useState<Cadastro>(initialCadastro);
-  const { createCustomerProfile } = useStore();
+  const { createCustomerProfile, login } = useStore();
 
   const atualizarCampo = (campo: keyof Cadastro, valor: string) => {
     setCadastro((dadosAtuais) => ({ ...dadosAtuais, [campo]: valor }));
@@ -72,7 +72,8 @@ export default function CadastroScreen() {
       bairro: cadastro.bairro,
       cidade: cadastro.cidade,
     });
-    router.replace('/telas-cliente');
+    login('cliente');
+    router.replace('/telas-cliente/home');
   };
 
   const renderCampo = (
@@ -96,10 +97,10 @@ export default function CadastroScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false}>
           <View style={styles.container}>
-            <Image source={require('@/assets/images/logo/logo.png')} style={styles.logo} resizeMode="contain" />
+            <Image source={require('@/assets/images/logo/logo2.png')} style={styles.logo} resizeMode="contain" />
             <Text style={styles.title}>Cadastro</Text>
             <Text style={styles.stepLabel}>Etapa {etapa} de 3</Text>
             <View style={styles.progressTrack}>

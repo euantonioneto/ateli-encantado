@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const tabItems: Record<string, { label: string; image: ImageSourcePropType }> = {
-  index: { label: 'Home', image: require('@/assets/images/inicio.png') },
+  home: { label: 'Home', image: require('@/assets/images/inicio.png') },
   favoritos: { label: 'Favoritos', image: require('@/assets/images/favoritos.png') },
   carrinho: { label: 'Carrinho', image: require('@/assets/images/carrinho.png') },
   perfil: { label: 'Perfil', image: require('@/assets/images/perfil.png') },
@@ -53,10 +53,19 @@ function AppTabBar({ state, descriptors, navigation, insets }: AppTabBarProps) {
 export default function TabLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <AppTabBar {...props} />}>
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
+      <Tabs.Screen name="home" options={{ title: 'Home' }} />
       <Tabs.Screen name="favoritos" options={{ title: 'Favoritos' }} />
       <Tabs.Screen name="carrinho" options={{ title: 'Carrinho' }} />
       <Tabs.Screen name="perfil" options={{ title: 'Perfil' }} />
+      <Tabs.Screen name="[categoria]" options={{ href: null }} />
+      <Tabs.Screen name="checkout" options={{ href: null }} />
+      <Tabs.Screen name="pedido-confirmado" options={{ href: null }} />
+      <Tabs.Screen name="pedido/[id]" options={{ href: null }} />
+      <Tabs.Screen name="meus-pedidos" options={{ href: null }} />
+      <Tabs.Screen name="conversar-vendedor" options={{ href: null }} />
+      <Tabs.Screen name="dados-conta" options={{ href: null }} />
+      <Tabs.Screen name="endereco-entrega" options={{ href: null }} />
+      <Tabs.Screen name="produto/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

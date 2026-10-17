@@ -24,7 +24,7 @@ export default function AppTabs() {
           <TabTrigger name="home" href="/" asChild>
             <TabButton>Home</TabButton>
           </TabTrigger>
-          <TabTrigger name="favoritos" href="/favoritos" asChild>
+          <TabTrigger name="favoritos" href="/telas-cliente/favoritos" asChild>
             <TabButton>Favoritos</TabButton>
           </TabTrigger>
         </CustomTabList>

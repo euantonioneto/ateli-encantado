@@ -1,15 +1,18 @@
 import { useState } from 'react';
-import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useStore } from '../context/StoreContext';
 
 
 export default function LoginAdmScreen() {
-     const [email, setEmail] = useState('');
+  const { login } = useStore();
+  const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
   function entrarComoAdmin() {
     if (email === 'adm@gmail.com' && senha === 'Adm') {
+      login('adm');
       router.replace('/telas-adm/Dashboard');
       return;
     }
@@ -21,9 +24,11 @@ export default function LoginAdmScreen() {
   }
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>
+        <View style={styles.container}>
         <Image
-          source={require('@/assets/images/logo/logo.png')}
+          source={require('@/assets/images/logo/logo2.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -57,12 +62,18 @@ export default function LoginAdmScreen() {
         </TouchableOpacity>
 
 
-        <TouchableOpacity 
-        style={styles.adminButton}
-            onPress={() => router.push('/loguin/logar-cliente')}>
+        <TouchableOpacity style={styles.adminButton} onPress={() => router.push('/telas-adm/RecuperarSenha')}>
+          <Text style={styles.adminText}>Esqueceu sua senha?</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.adminButton} onPress={() => router.push('/loguin/logar-cliente')}>
           <Text style={styles.adminText}>Acessar como cliente</Text>
         </TouchableOpacity>
-      </View>
+        <TouchableOpacity style={styles.adminButton} onPress={() => router.replace('/loguin')}>
+          <Text style={styles.adminText}>Escolher outro tipo de acesso</Text>
+        </TouchableOpacity>
+        </View>
+       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -72,11 +83,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  keyboard: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingVertical: 24 },
 
   container: {
-    flex: 1,
     paddingHorizontal: 26,
-    justifyContent: 'center',
+    flexGrow: 1,
   },
 
   logo: {

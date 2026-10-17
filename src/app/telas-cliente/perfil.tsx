@@ -6,7 +6,7 @@ import { useStore } from '../context/StoreContext';
 
 
 export default function ProfileScreen() {
-  const { customerProfile } = useStore();
+  const { customerProfile, logout } = useStore();
 
   if (customerProfile) {
     const primeiroNome = customerProfile.nome.split(' ')[0];
@@ -15,7 +15,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.loggedContainer}>
         <Image
-          source={require('@/assets/images/logo/logo.png')}
+          source={require('@/assets/images/logo/logo2.png')}
           style={styles.loggedLogo}
           resizeMode="contain"
         />
@@ -42,7 +42,7 @@ export default function ProfileScreen() {
           <MenuItem texto="conversar com o vendedor" />
         </View>
 
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => { logout(); router.replace('/loguin'); }}>
           <Text style={styles.logoutText}>sair</Text>
         </TouchableOpacity>
       </View>
@@ -67,7 +67,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
   <View style={styles.container}>
-    <Image source={require('@/assets/images/logo/logo.png')} style={styles.logo} />
+    <Image source={require('@/assets/images/logo/logo2.png')} style={styles.logo} />
 
     <View style={styles.actions}>
       <TouchableOpacity
