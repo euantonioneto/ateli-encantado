@@ -7,7 +7,7 @@ import { DELIVERY_ESTIMATE, FIXED_DELIVERY_FEE } from '../../data/delivery-confi
 const inputStyle = { backgroundColor: '#F6F5F8', borderColor: '#E6E4EB', borderRadius: 14, borderWidth: 1, color: '#17151D', minHeight: 46, paddingHorizontal: 13 } as const;
 
 export default function CheckoutScreen() {
-  const { cart, products, customerProfile, updateCustomerProfile, createOrderFromCart } = useStore();
+  const { cart, products, customerProfile, saveCustomerProfile, createOrderFromCart } = useStore();
   const [name, setName] = useState(customerProfile?.nome ?? '');
   const [email, setEmail] = useState(customerProfile?.email ?? '');
   const [phone, setPhone] = useState(customerProfile?.telefone ?? '');
@@ -20,6 +20,7 @@ export default function CheckoutScreen() {
   const [paymentMethod, setPaymentMethod] = useState('Pix');
   const [customization, setCustomization] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const subtotal = cart.reduce((sum, item) => {
     const product = products.find((entry) => entry.id === item.productId);
     return sum + (product?.precosPorTipo?.[item.type] ?? product?.preco ?? 0) * item.quantity;
@@ -27,22 +28,34 @@ export default function CheckoutScreen() {
   const deliveryFee = deliveryMode === 'Retirada' ? 0 : FIXED_DELIVERY_FEE;
   const total = subtotal + deliveryFee;
 
-  function finishOrder() {
+  async function finishOrder() {
+    if (submitting) return;
     const addressRequired = deliveryMode === 'Entrega' && (!street.trim() || !number.trim() || !neighborhood.trim() || !city.trim() || !zip.trim());
     const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
     const phoneDigits = phone.replace(/\D/g, '');
     if (!name.trim() || !validEmail || phoneDigits.length < 8 || addressRequired) {
-      setError('Confira nome, e-mail, telefone e os dados de entrega obrigatórios.');
+      setError('Confira nome, e-mail, telefone e os dados de entrega obrigatorios.');
       return;
     }
-    const profile: CustomerProfile = { nome: name.trim(), email: email.trim(), telefone: phone.trim(), endereco: street.trim(), numero: number.trim(), bairro: neighborhood.trim(), cidade: city.trim(), cep: zip.trim() };
-    updateCustomerProfile(profile);
-    const delivery = deliveryMode === 'Retirada' ? 'Retirada no ateliê' : `${street.trim()}, ${number.trim()} · ${neighborhood.trim()} · ${city.trim()} · CEP ${zip.trim()}`;
-    const orderId = createOrderFromCart({ delivery, deliveryFee, deliveryEstimate: deliveryMode === 'Entrega' ? DELIVERY_ESTIMATE : 'A combinar na retirada', customization, paymentMethod, customerName: profile.nome, customerEmail: profile.email, customerPhone: profile.telefone });
-    if (!orderId) { setError('Não foi possível criar o pedido. Revise os itens do carrinho.'); return; }
-    router.replace({ pathname: '/telas-cliente/pedido-confirmado', params: { id: orderId } } as unknown as Href);
-  }
 
+    const profile: CustomerProfile = { nome: name.trim(), email: email.trim(), telefone: phone.trim(), endereco: street.trim(), numero: number.trim(), bairro: neighborhood.trim(), cidade: city.trim(), cep: zip.trim() };
+    const delivery = deliveryMode === 'Retirada' ? 'Retirada no atelie' : `${street.trim()}, ${number.trim()} - ${neighborhood.trim()} - ${city.trim()} - CEP ${zip.trim()}`;
+    setSubmitting(true);
+    setError('');
+    try {
+      await saveCustomerProfile(profile);
+      const orderId = await createOrderFromCart({ delivery, deliveryMode, deliveryFee, deliveryEstimate: deliveryMode === 'Entrega' ? DELIVERY_ESTIMATE : 'A combinar na retirada', customization, paymentMethod, customerName: profile.nome, customerEmail: profile.email, customerPhone: profile.telefone });
+      if (!orderId) {
+        setError('Nao foi possivel criar o pedido. Revise os itens do carrinho.');
+        return;
+      }
+      router.replace({ pathname: '/telas-cliente/pedido-confirmado', params: { id: orderId } } as unknown as Href);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Nao foi possivel salvar o pedido. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
   if (!cart.length) return <SafeAreaView style={styles.safe}><View style={styles.center}><Text style={styles.heading}>Seu carrinho está vazio</Text><TouchableOpacity onPress={() => router.replace('/telas-cliente/home')}><Text style={styles.link}>Voltar ao catálogo</Text></TouchableOpacity></View></SafeAreaView>;
 
   return <SafeAreaView style={styles.safe}>
@@ -70,7 +83,7 @@ export default function CheckoutScreen() {
         <TextInput value={customization} onChangeText={setCustomization} placeholder="Observações gerais do pedido (opcional)" placeholderTextColor="#898590" multiline maxLength={500} style={[inputStyle, styles.multiline]} />
         {!!error && <Text style={styles.error}>{error}</Text>}
         <View style={styles.totalBox}><Text style={styles.summaryLine}>Subtotal dos produtos</Text><Text style={styles.summaryValue}>R$ {subtotal.toFixed(2).replace('.', ',')}</Text><Text style={styles.summaryLine}>Frete</Text><Text style={styles.summaryValue}>{deliveryFee === 0 ? 'Grátis' : `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`}</Text><Text style={styles.totalLabel}>Total</Text><Text style={styles.totalValue}>R$ {total.toFixed(2).replace('.', ',')}</Text></View>
-        <TouchableOpacity onPress={finishOrder} style={styles.primary}><Text style={styles.primaryText}>Confirmar pedido · R$ {total.toFixed(2).replace('.', ',')}</Text></TouchableOpacity>
+        <TouchableOpacity disabled={submitting} onPress={finishOrder} style={[styles.primary, submitting && { opacity: 0.6 }]}><Text style={styles.primaryText}>{submitting ? 'Salvando pedido...' : `Confirmar pedido · R$ ${total.toFixed(2).replace('.', ',')}`}</Text></TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   </SafeAreaView>;

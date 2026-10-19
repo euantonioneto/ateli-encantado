@@ -7,14 +7,14 @@ import { StoreProvider } from './context/StoreContext';
 import { useStore } from './context/StoreContext';
 
 function AuthGate({ children }: { children: ReactNode }) {
-  const { authRole, storeReady } = useStore();
+  const { authRole, authReady, storeReady } = useStore();
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
   const firstSegment = segments[0] as string | undefined;
 
   useEffect(() => {
-    if (!navigationState?.key || !storeReady) return;
+    if (!navigationState?.key || !storeReady || !authReady) return;
     const inAdmin = firstSegment === 'telas-adm';
     const publicAdminRoute = inAdmin && ['RecuperarSenha', 'EmailEnviado'].includes(segments[1] as string);
     const inCustomer = firstSegment === 'telas-cliente';
@@ -23,7 +23,7 @@ function AuthGate({ children }: { children: ReactNode }) {
     if (!authRole && ((inAdmin && !publicAdminRoute) || inCustomer)) router.replace('/loguin');
     else if (authRole === 'adm' && (inCustomer || inLogin)) router.replace('/telas-adm/Dashboard');
     else if (authRole === 'cliente' && (inAdmin || inLogin)) router.replace('/telas-cliente/home');
-  }, [authRole, firstSegment, navigationState?.key, router, storeReady]);
+  }, [authRole, authReady, firstSegment, navigationState?.key, router, storeReady]);
 
   return children;
 }

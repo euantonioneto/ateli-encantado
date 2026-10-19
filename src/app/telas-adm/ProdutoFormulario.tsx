@@ -12,7 +12,7 @@ function parseMoney(input: string) { const value = Number(input.replace(',', '.'
 
 export default function ProductFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { products, addProduct, updateProduct } = useStore();
+  const { products, productsReady, addProduct, updateProduct } = useStore();
   const product = products.find((item) => item.id === id);
   const [name, setName] = useState(product?.nome ?? '');
   const [description, setDescription] = useState(product?.descricao ?? '');
@@ -28,6 +28,7 @@ export default function ProductFormScreen() {
   });
   const [published, setPublished] = useState(product?.publicado ?? true);
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
   const selectedCategory = useMemo(() => productCategories.find((item) => item.id === category) ?? productCategories[0], [category]);
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function ProductFormScreen() {
     setName(product.nome); setDescription(product.descricao); setCategory(product.categoria); setProductionTime(product.prazoProducao ?? '24–48 horas'); setPublished(product.publicado);
     setAvailableTypes(product.tiposDisponiveis ?? [...productTypes]);
     setPrices({ Simples: String(product.precosPorTipo?.Simples ?? ''), 'Médio': String(product.precosPorTipo?.['Médio'] ?? ''), Completo: String(product.precosPorTipo?.Completo ?? product.preco), Especial: String(product.precosPorTipo?.Especial ?? '') });
-  }, [id]);
+  }, [id, product]);
 
   async function choosePhoto() {
     setPhotoError('');
@@ -75,15 +76,29 @@ export default function ProductFormScreen() {
   }
 
   function toggleType(type: ProductType) { setAvailableTypes((items) => items.includes(type) ? items.filter((item) => item !== type) : [...items, type]); }
-  function save() {
+  async function save() {
+    if (id && !productsReady) return;
+    if (id && !product) { setError('Produto não encontrado no banco. Volte à lista e tente novamente.'); return; }
     const priceEntries = availableTypes.map((type) => parseMoney(prices[type])).filter((price) => price > 0);
     const basePrice = priceEntries.length ? Math.min(...priceEntries) : 0;
     if (availableTypes.some((type) => parseMoney(prices[type]) <= 0)) { setError('Informe um preÃ§o vÃ¡lido para cada tipo selecionado.'); return; }
     if (!name.trim() || !description.trim() || !availableTypes.length || !basePrice) { setError('Preencha nome, descrição, ao menos um tipo disponível e o preço correspondente.'); return; }
     const imagem = photoSource ?? selectedCategory.image;
     const data = { nome: name.trim(), descricao: description.trim(), categoria: category, prazoProducao: productionTime.trim(), tiposDisponiveis: availableTypes, precosPorTipo: Object.fromEntries(availableTypes.map((type) => [type, parseMoney(prices[type])])) as Partial<Record<ProductType, number>>, preco: basePrice, imagem, publicado: published };
-    if (product) { updateProduct(product.id, data); router.replace('/telas-adm/Produtos'); }
-    else { const newId = addProduct(data); router.replace({ pathname: '/telas-adm/ProdutoSalvo', params: { id: newId } }); }
+    try {
+      setSaving(true);
+      if (product) {
+        await updateProduct(product.id, data);
+        router.replace('/telas-adm/Produtos');
+      } else {
+        const newId = await addProduct(data);
+        router.replace({ pathname: '/telas-adm/ProdutoSalvo', params: { id: newId } });
+      }
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Não foi possível salvar o produto.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return <Screen><Header title={product ? 'Editar produto' : 'Criar produto'} subtitle="Adicione ou atualize os detalhes do produto." back />
@@ -106,7 +121,7 @@ export default function ProductFormScreen() {
     <SectionTitle>Disponibilidade no catálogo</SectionTitle>
     <View style={styles.types}><Chip label="Ativo · publicado" active={published} onPress={() => setPublished(true)} /><Chip label="Rascunho" active={!published} onPress={() => setPublished(false)} /></View>
     {error ? <Text style={styles.error}>{error}</Text> : null}
-    <Button title={product ? 'Salvar alterações' : 'Salvar produto'} onPress={save} />
+    <Button title={product ? 'Salvar alterações' : 'Salvar produto'} disabled={saving || (!!id && !productsReady)} onPress={save} />
   </Screen>;
 }
 

@@ -2,20 +2,46 @@ import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { useStore } from '../context/StoreContext';
+import { supabase } from '../lib/supabase';
+
 
 export default function LoginClienteScreen() {
-  const { login } = useStore();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-  function entrarComoCliente() {
+  async function entrarComoCliente() {
     if (!email.trim() || !senha) {
-      Alert.alert('Preencha seus dados', 'Informe seu e-mail e sua senha para continuar.');
+      Alert.alert(
+        'Preencha seus dados',
+        'Informe seu e-mail e sua senha para continuar.'
+      );
       return;
     }
-    login('cliente');
-    router.replace('/telas-cliente/home');
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: senha,
+      });
+
+      if (error) {
+        Alert.alert('Não foi possível entrar', error.message);
+        return;
+      }
+
+      if (data.user.app_metadata?.role === 'admin' || data.user.app_metadata?.role === 'adm') {
+        await supabase.auth.signOut();
+        Alert.alert('Conta administrativa', 'Entre pela opção de acesso administrativo.');
+        return;
+      }
+
+      router.replace('/telas-cliente/home');
+    } catch {
+      Alert.alert(
+        'Falha de conexão',
+        'Verifique sua internet e tente novamente.'
+      );
+    }
   }
 
   return (

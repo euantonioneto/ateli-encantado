@@ -12,8 +12,9 @@ function formatDate(value: string) {
 
 export default function CustomerOrderDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { orders, products, customerProfile } = useStore();
-  const order = orders.find((item) => item.id === id && ((Boolean(customerProfile?.email) && item.customerEmail?.toLowerCase() === customerProfile?.email.toLowerCase()) || item.customer === customerProfile?.nome));
+  const { orders, products } = useStore();
+  // A lista é limitada pelo Supabase RLS aos pedidos do usuário autenticado.
+  const order = orders.find((item) => item.id === id);
   if (!order) return <SafeAreaView style={styles.safe}><View style={styles.empty}><Text style={styles.title}>Pedido não encontrado</Text><TouchableOpacity onPress={() => router.back()}><Text style={styles.link}>Voltar aos pedidos</Text></TouchableOpacity></View></SafeAreaView>;
 
   const history = order.statusHistory?.length ? order.statusHistory : [{ status: order.status, at: order.date }];

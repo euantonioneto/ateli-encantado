@@ -6,10 +6,9 @@ import { useStore } from '../context/StoreContext';
 const money = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
 export default function MeusPedidosScreen() {
-  const { orders, customerProfile, products } = useStore();
-  const customerOrders = orders.filter((order) =>
-    (Boolean(customerProfile?.email) && order.customerEmail?.toLowerCase() === customerProfile?.email.toLowerCase())
-    || order.customer === (customerProfile?.nome ?? 'Cliente'));
+  const { orders, products } = useStore();
+  // A consulta do Supabase já retorna apenas os pedidos do usuário autenticado via RLS.
+  const customerOrders = orders;
 
   return <SafeAreaView style={styles.safe}>
     <ScrollView contentContainerStyle={styles.content}>

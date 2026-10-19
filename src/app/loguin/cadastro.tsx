@@ -1,19 +1,8 @@
 import { useState } from 'react';
-import {
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {Alert,Image,KeyboardAvoidingView,Platform,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View,} from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useStore } from '../context/StoreContext';
+import { supabase } from '../lib/supabase';
 
 type Cadastro = {
   nome: string;
@@ -35,8 +24,6 @@ const initialCadastro: Cadastro = {
 export default function CadastroScreen() {
   const [etapa, setEtapa] = useState(1);
   const [cadastro, setCadastro] = useState<Cadastro>(initialCadastro);
-  const { createCustomerProfile, login } = useStore();
-
   const atualizarCampo = (campo: keyof Cadastro, valor: string) => {
     setCadastro((dadosAtuais) => ({ ...dadosAtuais, [campo]: valor }));
   };
@@ -61,21 +48,60 @@ export default function CadastroScreen() {
     setEtapa((etapaAtual) => etapaAtual + 1);
   };
 
-  const concluirCadastro = () => {/*concluir*/
-    createCustomerProfile({
-      nome: cadastro.nome,
-      email: cadastro.email,
-      telefone: cadastro.telefone,
-      endereco: cadastro.endereco,
-      cep: cadastro.cep,
-      numero: cadastro.numero,
-      bairro: cadastro.bairro,
-      cidade: cadastro.cidade,
-    });
-    login('cliente');
-    router.replace('/telas-cliente/home');
-  };
+  const concluirCadastro = async () => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: cadastro.email.trim(),
+        password: cadastro.senha,
+        options: {
+          data: {
+            nome: cadastro.nome.trim(),
+            telefone: cadastro.telefone.trim(),
+          },
+        },
+      });
 
+      if (error) {
+        Alert.alert('Não foi possível cadastrar', error.message);
+        return;
+      }
+
+      if (data.session && data.user) {
+        const { error: perfilError } = await supabase
+          .from('perfis')
+          .upsert(
+            {
+              id: data.user.id,
+              nome: cadastro.nome.trim(),
+              telefone: cadastro.telefone.trim(),
+            },
+            { onConflict: 'id' }
+          );
+
+        if (perfilError) {
+          Alert.alert(
+            'Conta criada',
+            `A conta foi criada, mas não foi possível salvar o perfil: ${perfilError.message}`
+          );
+          return;
+        }
+
+        Alert.alert('Cadastro criado', 'Sua conta e seu perfil foram salvos.');
+      } else {
+        Alert.alert(
+          'Confirme seu e-mail',
+          'Sua conta foi criada. Confirme o e-mail antes de entrar. O perfil será salvo depois do login.'
+        );
+      }
+
+      router.replace('/loguin/logar-cliente');
+    } catch {
+      Alert.alert(
+        'Falha de conexão',
+        'Não foi possível conectar ao serviço. Verifique sua internet e tente novamente.'
+      );
+    }
+  };
   const renderCampo = (
     label: string,
     campo: keyof Cadastro,

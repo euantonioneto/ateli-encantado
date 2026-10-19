@@ -6,21 +6,22 @@ import { useStore } from '../context/StoreContext';
 
 
 export default function LoginAdmScreen() {
-  const { login } = useStore();
+  const { loginAdmin } = useStore();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
   function entrarComoAdmin() {
-    if (email === 'adm@gmail.com' && senha === 'Adm') {
-      login('adm');
-      router.replace('/telas-adm/Dashboard');
+    if (!email.trim() || !senha) {
+      Alert.alert('Preencha seus dados', 'Informe seu e-mail e sua senha para continuar.');
       return;
     }
 
-    Alert.alert(
-      'Dados inválidos',
-      'E-mail ou senha de administrador incorretos.'
-    );
+    if (!loginAdmin(email, senha)) {
+      Alert.alert('Acesso negado', 'Confira o e-mail e a senha administrativa.');
+      return;
+    }
+
+    router.replace('/telas-adm/Dashboard');
   }
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -59,11 +60,6 @@ export default function LoginAdmScreen() {
         style={styles.button}
         onPress={entrarComoAdmin}>
         <Text style={styles.buttonText}>Entrar</Text>
-        </TouchableOpacity>
-
-
-        <TouchableOpacity style={styles.adminButton} onPress={() => router.push('/telas-adm/RecuperarSenha')}>
-          <Text style={styles.adminText}>Esqueceu sua senha?</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.adminButton} onPress={() => router.push('/loguin/logar-cliente')}>
           <Text style={styles.adminText}>Acessar como cliente</Text>

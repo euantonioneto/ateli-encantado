@@ -9,9 +9,19 @@ if (!url || !key) {
   throw new Error('Configure a URL e a chave pública do Supabase no arquivo .env');
 }
 
+const authStorage = {
+  getItem: async (name: string) => typeof localStorage === 'undefined' ? null : localStorage.getItem(name),
+  setItem: async (name: string, value: string) => {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(name, value);
+  },
+  removeItem: async (name: string) => {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(name);
+  },
+};
+
 export const supabase = createClient(url, key, {
   auth: {
-    storage: localStorage,
+    storage: authStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
