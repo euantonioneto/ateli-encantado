@@ -2,10 +2,12 @@ import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { useStore } from '../context/StoreContext';
+
 
 
 export default function LoginClienteScreen() {
+  const { loginCustomer } = useStore();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
@@ -18,30 +20,13 @@ export default function LoginClienteScreen() {
       return;
     }
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: senha,
-      });
-
-      if (error) {
-        Alert.alert('Não foi possível entrar', error.message);
-        return;
-      }
-
-      if (data.user.app_metadata?.role === 'admin' || data.user.app_metadata?.role === 'adm') {
-        await supabase.auth.signOut();
-        Alert.alert('Conta administrativa', 'Entre pela opção de acesso administrativo.');
-        return;
-      }
-
-      router.replace('/telas-cliente/home');
-    } catch {
-      Alert.alert(
-        'Falha de conexão',
-        'Verifique sua internet e tente novamente.'
-      );
+    if (!loginCustomer(email, senha)) {
+      Alert.alert('Não foi possível entrar', 'Confira seus dados ou faça seu cadastro.');
+      return;
     }
+
+    router.replace('/telas-cliente/home');
+
   }
 
   return (

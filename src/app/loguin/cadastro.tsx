@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {Alert,Image,KeyboardAvoidingView,Platform,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View,} from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../lib/supabase';
+import { useStore } from '../context/StoreContext';
 
 type Cadastro = {
   nome: string;
@@ -22,6 +22,7 @@ const initialCadastro: Cadastro = {
 };
 
 export default function CadastroScreen() {
+  const { registerCustomer } = useStore();
   const [etapa, setEtapa] = useState(1);
   const [cadastro, setCadastro] = useState<Cadastro>(initialCadastro);
   const atualizarCampo = (campo: keyof Cadastro, valor: string) => {
@@ -35,73 +36,30 @@ export default function CadastroScreen() {
         return;
       }
       if (cadastro.senha !== cadastro.confirmarSenha) {
-        Alert.alert('Senhas diferentes', 'A confirmação de senha deve ser igual à senha informada.');
+        Alert.alert('Senhas diferentes', 'A confirmacao de senha deve ser igual a senha informada.');
         return;
       }
     }
 
     if (etapa === 2 && (!cadastro.telefone || !cadastro.endereco || !cadastro.cep || !cadastro.numero || !cadastro.bairro || !cadastro.cidade)) {
-      Alert.alert('Preencha seu endereço', 'Informe todos os dados de contato e endereço para continuar.');
+      Alert.alert('Preencha seu endereco', 'Informe todos os dados de contato e endereco para continuar.');
       return;
     }
 
     setEtapa((etapaAtual) => etapaAtual + 1);
   };
 
-  const concluirCadastro = async () => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: cadastro.email.trim(),
-        password: cadastro.senha,
-        options: {
-          data: {
-            nome: cadastro.nome.trim(),
-            telefone: cadastro.telefone.trim(),
-          },
-        },
-      });
-
-      if (error) {
-        Alert.alert('Não foi possível cadastrar', error.message);
-        return;
-      }
-
-      if (data.session && data.user) {
-        const { error: perfilError } = await supabase
-          .from('perfis')
-          .upsert(
-            {
-              id: data.user.id,
-              nome: cadastro.nome.trim(),
-              telefone: cadastro.telefone.trim(),
-            },
-            { onConflict: 'id' }
-          );
-
-        if (perfilError) {
-          Alert.alert(
-            'Conta criada',
-            `A conta foi criada, mas não foi possível salvar o perfil: ${perfilError.message}`
-          );
-          return;
-        }
-
-        Alert.alert('Cadastro criado', 'Sua conta e seu perfil foram salvos.');
-      } else {
-        Alert.alert(
-          'Confirme seu e-mail',
-          'Sua conta foi criada. Confirme o e-mail antes de entrar. O perfil será salvo depois do login.'
-        );
-      }
-
-      router.replace('/loguin/logar-cliente');
-    } catch {
-      Alert.alert(
-        'Falha de conexão',
-        'Não foi possível conectar ao serviço. Verifique sua internet e tente novamente.'
-      );
-    }
+  const concluirCadastro = () => {
+    const profile = {
+      nome: cadastro.nome.trim(), email: cadastro.email.trim(), telefone: cadastro.telefone.trim(),
+      endereco: cadastro.endereco.trim(), cep: cadastro.cep.trim(), numero: cadastro.numero.trim(),
+      bairro: cadastro.bairro.trim(), cidade: cadastro.cidade.trim(),
+    };
+    registerCustomer(profile, cadastro.senha);
+    Alert.alert('Cadastro criado', 'Seus dados foram salvos neste dispositivo.');
+    router.replace('/telas-cliente/home');
   };
+
   const renderCampo = (
     label: string,
     campo: keyof Cadastro,
@@ -142,9 +100,9 @@ export default function CadastroScreen() {
 
             {etapa === 2 && <View style={styles.form}>
               {renderCampo('Telefone', 'telefone', { keyboardType: 'phone-pad' })}
-              {renderCampo('Endereço', 'endereco')}
+              {renderCampo('Endereco', 'endereco')}
               {renderCampo('CEP', 'cep', { keyboardType: 'numeric' })}
-              {renderCampo('Número', 'numero', { keyboardType: 'numeric' })}
+              {renderCampo('Numero', 'numero', { keyboardType: 'numeric' })}
               {renderCampo('Bairro', 'bairro')}
               {renderCampo('Cidade', 'cidade')}
             </View>}
@@ -154,7 +112,7 @@ export default function CadastroScreen() {
               <ReviewItem label="Nome" value={cadastro.nome} />
               <ReviewItem label="E-mail" value={cadastro.email} />
               <ReviewItem label="Contato" value={cadastro.telefone} />
-              <ReviewItem label="Endereço" value={`${cadastro.endereco}, ${cadastro.numero}`} />
+              <ReviewItem label="Endereco" value={`${cadastro.endereco}, ${cadastro.numero}`} />
               <ReviewItem label="Bairro" value={cadastro.bairro} />
               <ReviewItem label="CEP" value={cadastro.cep} />
               <ReviewItem label="Cidade" value={cadastro.cidade} />
@@ -165,7 +123,7 @@ export default function CadastroScreen() {
                 <Text style={styles.backButtonText}>Voltar</Text>
               </TouchableOpacity>}
               <TouchableOpacity style={styles.nextButton} onPress={etapa === 3 ? concluirCadastro : avancar}>
-                <Text style={styles.nextButtonText}>{etapa === 3 ? 'Concluir cadastro' : 'Próximo'}</Text>
+                <Text style={styles.nextButtonText}>{etapa === 3 ? 'Concluir cadastro' : 'Proximo'}</Text>
               </TouchableOpacity>
             </View>
           </View>

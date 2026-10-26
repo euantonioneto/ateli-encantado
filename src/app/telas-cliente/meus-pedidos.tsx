@@ -7,7 +7,6 @@ const money = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
 export default function MeusPedidosScreen() {
   const { orders, products } = useStore();
-  // A consulta do Supabase já retorna apenas os pedidos do usuário autenticado via RLS.
   const customerOrders = orders;
 
   return <SafeAreaView style={styles.safe}>

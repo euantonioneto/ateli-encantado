@@ -1,10 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system/legacy';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
-import { initialProducts, NewProduct, Product, ProductType, productTypes, productCategories } from '../../data/catalog';
+import { initialProducts, NewProduct, Product, ProductType, productTypes } from '../../data/catalog';
 import { AdminConversation, AdminOrder, initialConversations, initialOrders, OrderItem, OrderStatus } from '../../data/admin';
-import { DELIVERY_ESTIMATE } from '../../data/delivery-config';
-import { supabase } from '../lib/supabase';
 
 export type CustomerProfile = {
   nome: string;
@@ -28,6 +25,8 @@ type StoreContextData = {
   customerProfile: CustomerProfile | null;
   authRole: AuthRole | null;
   loginAdmin: (email: string, password: string) => boolean;
+  loginCustomer: (email: string, password: string) => boolean;
+  registerCustomer: (profile: CustomerProfile, password: string) => void;
   logout: () => void;
   products: Product[];
   addProduct: (product: NewProduct) => Promise<string>;
@@ -67,157 +66,12 @@ export function StoreProvider({ children }: { children: ReactNode }) { /*fa/ca/p
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
   const [authRole, setAuthRole] = useState<AuthRole | null>(null);
+  const [customerCredentials, setCustomerCredentials] = useState<{ email: string; password: string } | null>(null);
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [orders, setOrders] = useState<AdminOrder[]>(initialOrders);
   const [conversations, setConversations] = useState<AdminConversation[]>(initialConversations);
 
-  useEffect(() => {
-    let mounted = true;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
-      const role = session?.user.app_metadata?.role;
-      setAuthRole(session ? (role === 'admin' || role === 'adm' ? 'adm' : 'cliente') : null);
-      setAuthReady(true);
-    });
-
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (!mounted) return;
-      if (!error) {
-        const role = data.session?.user.app_metadata?.role;
-        setAuthRole(data.session ? (role === 'admin' || role === 'adm' ? 'adm' : 'cliente') : null);
-      }
-      setAuthReady(true);
-    }).catch(() => {
-      if (mounted) {
-        setAuthRole(null);
-        setAuthReady(true);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!authReady) return;
-    let mounted = true;
-    setProductsReady(false);
-
-    async function loadProducts() {
-      try {
-        const { data, error } = await supabase
-          .from('produtos')
-          .select('id,nome,descricao,preco,publicado,destaque,prazo_producao,opcoes,imagem_url,categorias!inner(slug)')
-          .order('criado_em', { ascending: false });
-        if (error) throw error;
-
-        const loaded: Product[] = (data ?? []).flatMap((raw: any) => {
-          const categoryRow = Array.isArray(raw.categorias) ? raw.categorias[0] : raw.categorias;
-          const category = productCategories.find((item) => item.id === categoryRow?.slug);
-          if (!category) return [];
-          const options = raw.opcoes && typeof raw.opcoes === 'object' ? raw.opcoes : {};
-          const configuredTypes = Array.isArray(options.tiposDisponiveis)
-            ? options.tiposDisponiveis.filter((type: unknown): type is ProductType => productTypes.includes(type as ProductType))
-            : [];
-          const configuredPrices = options.precosPorTipo && typeof options.precosPorTipo === 'object'
-            ? options.precosPorTipo as Partial<Record<ProductType, number>>
-            : {};
-          const types = configuredTypes.length ? configuredTypes : ['Completo' as ProductType];
-          const prices = Object.keys(configuredPrices).length ? configuredPrices : { Completo: Number(raw.preco) };
-
-          return [{
-            id: raw.id,
-            nome: raw.nome,
-            descricao: raw.descricao ?? '',
-            preco: Number(raw.preco),
-            categoria: category.id,
-            imagem: raw.imagem_url ? { uri: raw.imagem_url } : category.image,
-            publicado: Boolean(raw.publicado),
-            destaque: Boolean(raw.destaque),
-            prazoProducao: raw.prazo_producao ?? undefined,
-            tiposDisponiveis: types,
-            precosPorTipo: prices,
-          }];
-        });
-
-        if (mounted) setProducts(loaded);
-      } catch (error) {
-        console.error('Não foi possível carregar os produtos do Supabase:', error);
-      } finally {
-        if (mounted) setProductsReady(true);
-      }
-    }
-
-    void loadProducts();
-    return () => { mounted = false; };
-  }, [authReady, authRole]);
-
-  useEffect(() => {
-    if (!authReady) return;
-    let mounted = true;
-
-    async function loadCustomerOrders() {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        if (mounted) setOrders([]);
-        return;
-      }
-
-      const [{ data, error }, { data: profile }] = await Promise.all([
-        supabase.from('pedidos')
-          .select('id,status,subtotal,frete,total,forma_entrega,endereco_entrega,forma_pagamento,observacoes,criado_em,itens_pedido(produto_id,nome_produto,opcao,customizacao,quantidade,preco_unitario)')
-          .order('criado_em', { ascending: false }),
-        supabase.from('perfis').select('nome,telefone').eq('id', user.id).maybeSingle(),
-      ]);
-      if (error) {
-        console.error('Não foi possível carregar os pedidos do Supabase:', error);
-        return;
-      }
-
-      const loaded: AdminOrder[] = (data ?? []).map((row: any) => {
-        const items: OrderItem[] = (row.itens_pedido ?? []).map((item: any) => ({
-          productId: item.produto_id,
-          type: item.opcao,
-          quantity: Number(item.quantidade),
-          unitPrice: Number(item.preco_unitario),
-          customization: item.customizacao ?? '',
-        }));
-        const status = row.status as OrderStatus;
-        const createdAt = row.criado_em ?? new Date().toISOString();
-        const delivery = row.forma_entrega === 'Retirada no ateliê'
-          ? 'Retirada no ateliê'
-          : `${row.endereco_entrega ?? ''}`;
-        return {
-          id: String(row.id),
-          productId: items[0]?.productId ?? '',
-          customer: profile?.nome ?? user.user_metadata?.nome ?? user.email ?? 'Cliente',
-          customerEmail: user.email,
-          customerPhone: profile?.telefone ?? '',
-          type: items.length === 1 ? items[0].type : 'Vários itens',
-          items,
-          price: Number(row.total),
-          subtotal: Number(row.subtotal),
-          deliveryFee: Number(row.frete),
-          status,
-          paymentStatus: 'Pendente',
-          paymentMethod: row.forma_pagamento,
-          delivery,
-          deliveryEstimate: row.forma_entrega === 'Retirada no ateliê' ? 'A combinar na retirada' : DELIVERY_ESTIMATE,
-          customization: row.observacoes ?? 'Sem personalização informada.',
-          date: new Date(createdAt).toLocaleDateString('pt-BR'),
-          statusHistory: [{ status, at: createdAt }],
-        };
-      });
-      if (mounted) setOrders(loaded);
-    }
-
-    void loadCustomerOrders().catch((error) => {
-      console.error('Falha ao carregar pedidos:', error);
-    });
-    return () => { mounted = false; };
-  }, [authReady, authRole]);
+  useEffect(() => { setProductsReady(true); }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -225,89 +79,37 @@ export function StoreProvider({ children }: { children: ReactNode }) { /*fa/ca/p
       if (raw && mounted) {
         const saved = JSON.parse(raw);
         if (Array.isArray(saved.conversations)) setConversations(saved.conversations);
+        if (Array.isArray(saved.products)) setProducts(saved.products);
+        if (Array.isArray(saved.orders)) setOrders(saved.orders);
+        if (saved.customerCredentials) setCustomerCredentials(saved.customerCredentials);
+        if (saved.authRole === 'adm' || saved.authRole === 'cliente') setAuthRole(saved.authRole);
         if (Array.isArray(saved.favorites)) setFavorites(saved.favorites);
         if (Array.isArray(saved.cart)) setCart(saved.cart);
         if (saved.customerProfile && typeof saved.customerProfile === 'object') setCustomerProfile(saved.customerProfile);
       }
     }).catch(() => {
       // Keep the in-memory defaults available if local storage cannot be read.
-    }).finally(() => { if (mounted) setStoreReady(true); });
+    }).finally(() => { if (mounted) { setStoreReady(true); setAuthReady(true); setProductsReady(true); } });
     return () => { mounted = false; };
   }, []);
 
   useEffect(() => {
     if (!storeReady) return;
-    AsyncStorage.setItem('atelie-store-v1', JSON.stringify({ conversations, favorites, cart, customerProfile })).catch(() => {
+    AsyncStorage.setItem('atelie-store-v1', JSON.stringify({ conversations, products, orders, favorites, cart, customerProfile, customerCredentials, authRole })).catch(() => {
       // Storage failures do not block the current session; callers still see the live state.
     });
-  }, [storeReady, conversations, favorites, cart, customerProfile]);
-
-  async function saveProductImage(image: Product['imagem']) {
-    if (!image || typeof image !== 'object' || Array.isArray(image)) return null;
-    const uri = image.uri;
-    if (!uri) return null;
-    if (/^https?:\/\//i.test(uri)) return uri;
-
-    const dataUriMatch = uri.match(/^data:([^;]+);base64,(.*)$/);
-    const base64 = dataUriMatch
-      ? dataUriMatch[2]
-      : await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-    const extension = (uri.match(/\.([a-zA-Z0-9]+)(?:[?#]|$)/)?.[1] ?? 'jpg').toLowerCase();
-    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
-    const contentType = dataUriMatch?.[1] ?? ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }[extension] ?? 'image/jpeg');
-    const { error } = await supabase.storage.from('produtos').upload(path, bytes.buffer, {
-      contentType,
-      upsert: false,
-    });
-    if (error) throw error;
-    return supabase.storage.from('produtos').getPublicUrl(path).data.publicUrl;
-  }
-
-  async function persistProduct(product: NewProduct, productId?: string) {
-    const { data: category, error: categoryError } = await supabase
-      .from('categorias').select('id').eq('slug', product.categoria).single();
-    if (categoryError) throw categoryError;
-
-    const imageUrl = await saveProductImage(product.imagem);
-    const row = {
-      categoria_id: category.id,
-      nome: product.nome,
-      descricao: product.descricao,
-      preco: product.preco,
-      publicado: product.publicado,
-      destaque: product.destaque ?? false,
-      prazo_producao: product.prazoProducao ?? null,
-      imagem_url: imageUrl,
-      opcoes: {
-        tiposDisponiveis: product.tiposDisponiveis ?? [],
-        precosPorTipo: product.precosPorTipo ?? {},
-      },
-    };
-
-    const query = productId
-      ? supabase.from('produtos').update(row).eq('id', productId).select('id').single()
-      : supabase.from('produtos').insert(row).select('id').single();
-    const { data, error } = await query;
-    if (error) throw error;
-
-    const savedProduct: Product = { ...product, id: data.id, imagem: imageUrl ? { uri: imageUrl } : product.imagem };
-    setProducts((items) => productId
-      ? items.map((item) => item.id === productId ? savedProduct : item)
-      : [savedProduct, ...items]);
-    return data.id as string;
-  }
+  }, [storeReady, conversations, products, orders, favorites, cart, customerProfile, customerCredentials, authRole]);
 
   async function addProduct(product: NewProduct) {
-    return persistProduct(product);
+    const id = product.id ?? `produto-${Date.now()}`;
+    setProducts((items) => [{ ...product, id }, ...items]);
+    return id;
   }
 
   async function updateProduct(productId: string, changes: Partial<Omit<Product, 'id'>>) {
     const current = products.find((item) => item.id === productId);
     if (!current) throw new Error('Produto não encontrado.');
-    await persistProduct({ ...current, ...changes }, productId);
+    setProducts((items) => items.map((item) => item.id === productId ? { ...item, ...changes } : item));
   }
 
   async function toggleProductPublished(productId: string) {
@@ -317,8 +119,6 @@ export function StoreProvider({ children }: { children: ReactNode }) { /*fa/ca/p
   }
 
   async function deleteProduct(productId: string) {
-    const { error } = await supabase.from('produtos').delete().eq('id', productId);
-    if (error) throw error;
     setProducts((items) => items.filter((product) => product.id !== productId));
   }
 
@@ -375,54 +175,33 @@ export function StoreProvider({ children }: { children: ReactNode }) { /*fa/ca/p
     });
     if (validItems.some((item) => !item)) return null;
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('Entre na sua conta de cliente antes de confirmar o pedido.');
-
     const items = validItems as Array<CartItem & { product: Product; unitPrice: number }>;
     const notes = [details.customization.trim(), ...items.filter((item) => item.customization.trim()).map((item) => `${item.product.nome} (${item.type}): ${item.customization.trim()}`)].filter(Boolean).join('\n');
-    const { data: orderId, error } = await supabase.rpc('criar_pedido_cliente', {
-      p_forma_entrega: details.deliveryMode === 'Retirada' ? 'Retirada no ateliê' : 'Entrega',
-      p_endereco_entrega: details.deliveryMode === 'Retirada' ? null : details.delivery,
-      p_forma_pagamento: details.paymentMethod,
-      p_observacoes: notes || null,
-      p_itens: items.map((item) => ({ produto_id: item.productId, opcao: item.type, quantidade: item.quantity, customizacao: item.customization.trim() || null })),
-    });
-    if (error) throw error;
-
-    const { data: row } = await supabase.from('pedidos')
-      .select('id,status,subtotal,frete,total,forma_entrega,endereco_entrega,forma_pagamento,observacoes,criado_em,itens_pedido(produto_id,nome_produto,opcao,customizacao,quantidade,preco_unitario)')
-      .eq('id', orderId).single();
     const now = new Date().toISOString();
-    const savedItems: OrderItem[] = row?.itens_pedido?.map((item: any) => ({
-      productId: item.produto_id,
-      type: item.opcao,
-      quantity: Number(item.quantidade),
-      unitPrice: Number(item.preco_unitario),
-      customization: item.customizacao ?? '',
-    })) ?? items.map((item) => ({ productId: item.productId, type: item.type, quantity: item.quantity, unitPrice: item.unitPrice, customization: item.customization, productionTime: item.product.prazoProducao }));
-    const subtotal = row ? Number(row.subtotal) : savedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-    const deliveryFee = row ? Number(row.frete) : details.deliveryMode === 'Retirada' ? 0 : details.deliveryFee ?? 0;
-    const status = (row?.status ?? 'Pendente') as OrderStatus;
+    const orderId = `pedido-${Date.now()}`;
+    const savedItems: OrderItem[] = items.map((item) => ({ productId: item.productId, type: item.type, quantity: item.quantity, unitPrice: item.unitPrice, customization: item.customization, productionTime: item.product.prazoProducao }));
+    const subtotal = savedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+    const deliveryFee = details.deliveryMode === 'Retirada' ? 0 : details.deliveryFee ?? 0;
+    const status: OrderStatus = 'Pendente';
     const order: AdminOrder = {
-      id: String(orderId),
+      id: orderId,
       productId: savedItems[0]?.productId ?? '',
       customer: details.customerName,
-      customerEmail: user.email ?? details.customerEmail,
+      customerEmail: customerProfile?.email ?? details.customerEmail,
       customerPhone: details.customerPhone,
       type: savedItems.length === 1 ? savedItems[0].type : 'Vários itens',
       items: savedItems,
       subtotal,
       deliveryFee,
-      price: row ? Number(row.total) : subtotal + deliveryFee,
+      price: subtotal + deliveryFee,
       status,
-      statusHistory: [{ status, at: row?.criado_em ?? now }],
+      statusHistory: [{ status, at: now }],
       paymentStatus: 'Pendente',
       paymentMethod: details.paymentMethod,
-      delivery: row?.forma_entrega === 'Retirada no ateliê' ? 'Retirada no ateliê' : row?.endereco_entrega ?? details.delivery,
+      delivery: details.deliveryMode === 'Retirada' ? 'Retirada no ateliê' : details.delivery,
       deliveryEstimate: details.deliveryEstimate,
-      customization: (row?.observacoes ?? notes) || 'Sem personalização informada.',
-      date: new Date(row?.criado_em ?? now).toLocaleDateString('pt-BR'),
+      customization: notes || 'Sem personalização informada.',
+      date: new Date(now).toLocaleDateString('pt-BR'),
     };
     setOrders((current) => [order, ...current.filter((item) => item.id !== order.id)]);
     setCart([]);
@@ -479,22 +258,11 @@ export function StoreProvider({ children }: { children: ReactNode }) { /*fa/ca/p
   }
 
   async function saveCustomerProfile(profile: CustomerProfile) {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('Entre na sua conta para salvar seus dados.');
-
-    const { error } = await supabase.from('perfis').upsert({
-      id: user.id,
-      nome: profile.nome,
-      telefone: profile.telefone,
-    }, { onConflict: 'id' });
-    if (error) throw error;
-    setCustomerProfile({ ...profile, email: user.email ?? profile.email });
+    setCustomerProfile(profile);
   }
 
   function logout() {
     setAuthRole(null);
-    void supabase.auth.signOut();
   }
 
   function loginAdmin(email: string, password: string) {
@@ -503,8 +271,20 @@ export function StoreProvider({ children }: { children: ReactNode }) { /*fa/ca/p
     return true;
   }
 
+  function loginCustomer(email: string, password: string) {
+    if (!customerCredentials || customerCredentials.email !== email.trim().toLowerCase() || customerCredentials.password !== password) return false;
+    setAuthRole('cliente');
+    return true;
+  }
+
+  function registerCustomer(profile: CustomerProfile, password: string) {
+    setCustomerProfile(profile);
+    setCustomerCredentials({ email: profile.email.trim().toLowerCase(), password });
+    setAuthRole('cliente');
+  }
+
   return (
-    <StoreContext.Provider value={{ storeReady, authReady, productsReady, favorites, cart, customerProfile, authRole, loginAdmin, logout, products, addProduct, updateProduct, toggleProductPublished, deleteProduct, orders, updateOrderStatus, confirmOrderPayment, cancelOrder, conversations, sendAdminMessage, markConversationRead, sendCustomerMessage, ensureCustomerConversation, toggleFavorite, addCartItem, updateCartQuantity, updateCartCustomization, removeCartItem, createOrderFromCart, updateCustomerProfile, createCustomerProfile, saveCustomerProfile }}>
+    <StoreContext.Provider value={{ storeReady, authReady, productsReady, favorites, cart, customerProfile, authRole, loginAdmin, loginCustomer, registerCustomer, logout, products, addProduct, updateProduct, toggleProductPublished, deleteProduct, orders, updateOrderStatus, confirmOrderPayment, cancelOrder, conversations, sendAdminMessage, markConversationRead, sendCustomerMessage, ensureCustomerConversation, toggleFavorite, addCartItem, updateCartQuantity, updateCartCustomization, removeCartItem, createOrderFromCart, updateCustomerProfile, createCustomerProfile, saveCustomerProfile }}>
       {children}
     </StoreContext.Provider>
   );
