@@ -122,19 +122,25 @@ Senha: Adm
 - logout e autenticação real;
 - dashboard e gerenciamento de pedidos e produtos;
 - persistência no PostgreSQL por meio da API;
-- uso da câmera para registrar a foto de um produto no cadastro administrativo.
+- uso da câmera para registrar a foto de um produto no cadastro administrativo;
+- compartilhamento de produtos pela folha de compartilhamento nativa do dispositivo.
 
 ## Casos de uso
 
-Além dos casos existentes no protótipo inicial, foram adicionados os seguintes casos de uso para a evolução do sistema:
+Os oito casos abaixo foram selecionados para as Entregas 02 e 03. Cada caso representa um objetivo do ator; um caso pode usar mais de um endpoint.
 
-1. Buscar produto por nome;
-2. Editar produto;
-3. Excluir produto;
-4. Visualizar detalhes do pedido;
-5. Cancelar pedido.
+| Entrega | Caso de uso | Ator principal | Endpoints previstos |
+| --- | --- | --- | --- |
+| 02 | Consultar catálogo e buscar produtos | Cliente | `GET /products?search=&category=` |
+| 02 | Visualizar detalhes de um produto | Cliente | `GET /products/:id` |
+| 02 | Criar produto | Administrador | `POST /products` |
+| 02 | Criar pedido | Cliente | `POST /orders` |
+| 03 | Consultar pedidos e seus detalhes | Cliente | `GET /orders/customer/:customerId`; `GET /orders/:id` |
+| 03 | Editar produto | Administrador | `PUT /products/:id` |
+| 03 | Atualizar status do pedido | Administrador | `PATCH /orders/:id/status` |
+| 03 | Cancelar pedido | Cliente ou administrador | `PATCH /orders/:id/cancel` |
 
-Os cinco casos acima são novos no diagrama. Para a API, serão priorizados os casos de listar/buscar produto, criar produto, finalizar compra (criar pedido) e visualizar detalhes do pedido. A atualização de status será implementada como caso adicional administrativo.
+A captura de foto pela câmera faz parte do fluxo de criação do produto e não conta como um caso de uso adicional. Para a Entrega 03, o app compartilhará os dados de um produto pela folha de compartilhamento nativa do dispositivo; isso também não conta como um caso de uso adicional.
 
 ## Diagrama de Casos de Uso (UML)
 
@@ -144,103 +150,34 @@ Os cinco casos acima são novos no diagrama. Para a API, serão priorizados os c
 left to right direction
 skinparam packageStyle rectangle
 
-actor "Cliente" as C
-actor "Administrador" as A
+actor Cliente as C
+actor Administrador as A
 
 rectangle "Ateliê Encantado" {
- package "Autenticação" {
-    usecase "Fazer Login" as UC1
-    usecase "Cadastrar-se" as UC2
-    usecase "Informar Dados Pessoais" as UC2a
-    usecase "Informar Endereço" as UC2b
-    usecase "Confirmar Cadastro" as UC2c
-    usecase "Fazer Logout" as UC3
+  package "Entrega 02" {
+    usecase "Consultar catálogo\ne buscar produtos" as UC1
+    usecase "Visualizar detalhes\ndo produto" as UC2
+    usecase "Criar produto" as UC3
+    usecase "Criar pedido" as UC4
   }
 
-  package "Catálogo" {
-    usecase "Navegar pelo Catálogo" as UC4
-    usecase "Filtrar por Categoria" as UC5
-    usecase "Buscar Produto" as UC24
-    usecase "Visualizar Detalhes\ndo Produto" as UC6
-    usecase "Adicionar aos Favoritos" as UC7
-    usecase "Adicionar ao Carrinho" as UC8
-  }
-
-  package "Compras" {
-    usecase "Visualizar Carrinho" as UC9
-    usecase "Finalizar Compra" as UC10
-    usecase "Escolher Forma\nde Pagamento" as UC11
-    usecase "Acompanhar Pedidos" as UC12
-    usecase "Visualizar Detalhes\ndo Pedido" as UC25
-    usecase "Cancelar Pedido" as UC26
-  }
-
-  package "Perfil e Comunicação" {
-    usecase "Visualizar Perfil" as UC13
-    usecase "Editar Dados da Conta" as UC14
-    usecase "Editar Endereço\nde Entrega" as UC15
-    usecase "Solicitar Presente\nPersonalizado" as UC16
-    usecase "Conversar com\no Vendedor" as UC17
-    usecase "Visualizar Mensagens\nde Clientes" as UC18
-    usecase "Responder Cliente" as UC19
-  }
-
-  package "Administração" {
-    usecase "Acessar Dashboard" as UC20
-    usecase "Gerenciar Pedidos" as UC21
-    usecase "Atualizar Status\ndo Pedido" as UC22
-    usecase "Criar Produto" as UC23
-    usecase "Editar Produto" as UC27
-    usecase "Excluir Produto" as UC28
-    usecase "Cadastrar Foto\ndo Produto" as UC23a
-    usecase "Definir Tipos\nDisponíveis" as UC23b
+  package "Entrega 03" {
+    usecase "Consultar pedidos\ne seus detalhes" as UC5
+    usecase "Editar produto" as UC6
+    usecase "Atualizar status\ndo pedido" as UC7
+    usecase "Cancelar pedido" as UC8
   }
 }
 
 C --> UC1
 C --> UC2
-C --> UC3
+A --> UC3
 C --> UC4
 C --> UC5
-C --> UC24
-C --> UC6
-C --> UC7
+A --> UC6
+A --> UC7
 C --> UC8
-C --> UC9
-C --> UC10
-C --> UC12
-C --> UC25
-C --> UC26
-C --> UC13
-C --> UC14
-C --> UC15
-C --> UC17
-C --> UC16
-
-A --> UC1
-A --> UC20
-A --> UC21
-A --> UC22
-A --> UC23
-A --> UC27
-A --> UC28
-A --> UC18
-A --> UC19
-
-UC5 ..> UC4 : <<extend>>
-UC24 ..> UC4 : <<extend>>
-UC7 ..> UC6 : <<extend>>
-UC8 ..> UC6 : <<extend>>
-UC2 ..> UC2a : <<include>>
-UC2 ..> UC2b : <<include>>
-UC2 ..> UC2c : <<include>>
-UC10 ..> UC11 : <<include>>
-UC25 ..> UC12 : <<extend>>
-UC26 ..> UC25 : <<extend>>
-UC23 ..> UC23a : <<include>>
-UC23 ..> UC23b : <<include>>
-UC21 ..> UC22 : <<include>>
-UC16 ..> UC17 : <<include>>
+A --> UC8
 @enduml
 ```
 
@@ -290,14 +227,19 @@ class Product {
   +categoria: string
   +preco: decimal
   +imagemUrl: string
-  +ativo: boolean
+  +publicado: boolean
 }
 
 class Order {
   +id: UUID
+  +clienteNomeSnapshot: string
+  +clienteEmailSnapshot: string
+  +clienteTelefoneSnapshot: string
+  +enderecoEntregaSnapshot: string
   +status: OrderStatus
   +total: decimal
   +formaPagamento: string
+  +motivoCancelamento: string
   +criadoEm: datetime
 }
 
@@ -306,29 +248,38 @@ class OrderItem {
   +quantidade: int
   +precoUnitario: decimal
   +tipoProduto: string
+  +personalizacao: string
+}
+
+class OrderStatusHistory {
+  +id: UUID
+  +status: OrderStatus
+  +alteradoEm: datetime
 }
 
 User "1" -- "0..*" Address : possui
-User "1" -- "0..*" Order : realiza
-Order "1" -- "1..*" OrderItem : contém
-OrderItem "0..*" -- "1" Product : referencia
-Order "0..*" -- "1" Address : entregue em
+User "0..1" -- "0..*" Order : cliente cadastrado
+Address "0..1" -- "0..*" Order : endereco de entrega
+Order "1" *-- "1..*" OrderItem : contem
+Product "1" -- "0..*" OrderItem : aparece em
+Order "1" *-- "1..*" OrderStatusHistory : registra
 @enduml
 ```
 
 ## Banco de dados PostgreSQL
 
-O banco terá, no mínimo, as cinco tabelas abaixo. Assim, atende ao requisito mínimo de três tabelas persistidas e permite representar pedidos com vários itens.
+As tabelas serão implementadas em etapas. Na Entrega 02, serão criadas três tabelas. Na Entrega 03, serão adicionadas três tabelas para os novos casos de uso.
 
-| Tabela | Finalidade | Relações principais |
-| --- | --- | --- |
-| `users` | Clientes e administradores | Um usuário possui endereços e pedidos. |
-| `addresses` | Endereços de entrega | Pertence a um usuário; pode ser usado por pedidos. |
-| `products` | Produtos disponíveis no catálogo | É referenciado por itens de pedido. |
-| `orders` | Pedido e seu estado | Pertence a um cliente e usa um endereço. |
-| `order_items` | Produtos, quantidades e preços de um pedido | Pertence a um pedido e referencia um produto. |
+| Entrega | Tabela | Finalidade | Relações principais |
+| --- | --- | --- | --- |
+| 02 | `products` | Produtos disponíveis no catálogo | É referenciado por itens de pedido. |
+| 02 | `orders` | Pedido e seus dados de cliente e entrega | Armazena os dados informados no checkout. |
+| 02 | `order_items` | Produtos, quantidades e preços de um pedido | Pertence a um pedido e referencia um produto. |
+| 03 | `users` | Clientes e administradores | Um usuário possui endereços e pedidos. |
+| 03 | `addresses` | Endereços de entrega salvos | Pertence a um usuário e pode ser associado a pedidos. |
+| 03 | `order_status_history` | Histórico de alterações do status | Pertence a um pedido. |
 
-As migrations do Prisma deverão criar as chaves estrangeiras `user_id`, `address_id`, `order_id` e `product_id`. O preço unitário será salvo em `order_items` para preservar o valor da compra caso o preço do catálogo seja alterado posteriormente.
+Na Entrega 02, `orders` guardará uma cópia dos dados de cliente e entrega enviados no checkout, sem depender de conta cadastrada. Na Entrega 03, `users` e `addresses` permitirão relacionar o histórico ao cliente e reutilizar endereços; `order_status_history` registrará as mudanças de status. As migrations da Entrega 02 criarão `order_id` e `product_id` em `order_items`; na Entrega 03, serão adicionadas as relações opcionais `user_id` e `address_id` em `orders`, além de `order_id` em `order_status_history`. O preço unitário será salvo em `order_items` para preservar o valor da compra caso o preço do catálogo seja alterado posteriormente.
 
 ## API REST planejada
 
@@ -351,8 +302,20 @@ Exemplo de corpo para criar um pedido:
 
 ```json
 {
-  "customerId": "uuid-do-cliente",
-  "addressId": "uuid-do-endereco",
+  "customer": {
+    "nome": "Nome do cliente",
+    "email": "cliente@example.com",
+    "telefone": "11999999999"
+  },
+  "delivery": {
+    "modo": "ENTREGA",
+    "cep": "01000-000",
+    "rua": "Rua Exemplo",
+    "numero": "123",
+    "bairro": "Centro",
+    "cidade": "São Paulo",
+    "uf": "SP"
+  },
   "formaPagamento": "PIX",
   "items": [
     {
@@ -366,7 +329,9 @@ Exemplo de corpo para criar um pedido:
 
 ## Integração com recurso do dispositivo
 
-No fluxo administrativo **Criar Produto**, o aplicativo solicitará permissão para usar a câmera. A foto capturada será mostrada como prévia no formulário e enviada ou associada ao produto cadastrado. Essa funcionalidade atende ao uso de recurso nativo do dispositivo e corresponde à tela de criação de produto prevista no Figma.
+**Entrega 02 — câmera:** no fluxo administrativo **Criar Produto**, o aplicativo solicitará permissão para usar a câmera. A foto capturada será mostrada como prévia no formulário e enviada ou associada ao produto cadastrado.
+
+**Entrega 03 — compartilhamento nativo:** na tela de detalhes do produto, o cliente poderá abrir a folha de compartilhamento do dispositivo para enviar o nome, a descrição, o preço e o link ou identificador do produto por um aplicativo disponível. O app usará a API `Share` do React Native, sem exigir uma dependência adicional.
 
 ## Estado atual e integração futura
 
